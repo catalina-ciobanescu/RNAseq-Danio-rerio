@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#SBATCH --job-name file_conversion 
+#SBATCH --output file_conversion.out
+#SBATCH --partition cpu
+#SBATCH --cpus-per-task 8 
+#SBATCH --mem-per-cpu 10G 
+#SBATCH --time 01:00:00 
+
+output=/work/FAC/FBM/CIG/jlarsch/default/Catalina/First-step/RNAseq-analysis-pipeline/genome/conversion/outfile_genomic.gtf
+log2=/work/FAC/FBM/CIG/jlarsch/default/Catalina/First-step/RNAseq-analysis-pipeline/genome/conversion/logs.txt
+
+agat_convert_sp_gff2gtf.pl --gff /work/FAC/FBM/CIG/jlarsch/default/Catalina/First-step/RNAseq-analysis-pipeline/genome/ncbi_dataset/data/GCF_049306965.1/genomic.gff -o $output --log $log2

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#SBATCH --job-name trimmomatic_filtering
+#SBATCH --output trimmomatic_filtering.out
+#SBATCH --partition cpu
+#SBATCH --cpus-per-task 10 
+#SBATCH --mem-per-cpu 10G 
+#SBATCH --time 03:00:00 
+
+module load trimmomatic
+echo "Job started at: $(date)"
+cd /work/FAC/FBM/CIG/jlarsch/default/Catalina/First-step/RNAseq-analysis-pipeline/raw2
+#output=/work/FAC/FBM/CIG/jlarsch/default/Catalina/First-step/RNAseq-analysis-pipeline/trimmomatic_filtering
+
+for file1 in *.conc.R1.fastq.gz; do
+    file2=${file1/.R1./.R2.}
+    #base=${file1%.conc.R1.fastq.gz}
+    echo "running Trimmomatic on $file1 and $file2"
+    trimmomatic PE -phred33 \
+    "$file1" "$file2" \
+    -baseout ${file1%.*}_filtered.fastq.gz \
+    LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
+done
+
+echo "Job finished at: $(date)"
