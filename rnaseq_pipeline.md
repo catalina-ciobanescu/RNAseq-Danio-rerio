@@ -137,10 +137,12 @@ This is important not only for version control but also because it stores your s
 
 - Once you have your SAF file, running featureCounts is actually super straightforward. Just check the command on the documentation for featureCounts.
 - The most important setting you should pay attention to is the "-f" setting, which will determine whether featureCounts will count reads at the gene or exon-level
-- Then use again multiqc to get a report on the results of featureCounts! 
-    - Be careful to do this separately for the exon and gene-level data, since they will have the same name files and this will confuse multiqc
+
 
 ### 4.3 - Read counting QC
+
+- Then use again multiqc to get a report on the results of featureCounts! 
+    - Be careful to do this separately for the exon and gene-level data, since they will have the same name files and this will confuse multiqc
 
 
 ## 5 - Read counts pre-processing
