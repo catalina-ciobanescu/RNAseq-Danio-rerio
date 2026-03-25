@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#SBATCH --job-name genome_indexing
+#SBATCH --output genome_indexing.out
+#SBATCH --partition cpu
+#SBATCH --cpus-per-task 8 
+#SBATCH --mem=30G
+#SBATCH --time=02:00:00
+
+module load star
+
+echo "Job started at: $(date)"
+output=/work/FAC/FBM/CIG/jlarsch/default/Catalina/First-step/RNAseq-analysis-pipeline/genome_indexing
+GTF=/work/FAC/FBM/CIG/jlarsch/default/Catalina/First-step/RNAseq-analysis-pipeline/genome/conversion/outfile_genomic.gtf
+genome=/work/FAC/FBM/CIG/jlarsch/default/Catalina/First-step/RNAseq-analysis-pipeline/genome/ncbi_dataset/data/GCF_049306965.1/GCF_049306965.1_GRCz12tu_genomic.fna
+
+STAR --runThreadN $SLURM_CPUS_PER_TASK --runMode genomeGenerate --genomeDir $output --genomeFastaFiles $genome --sjdbGTFfile $GTF --sjdbOverhang 74
+
+echo "Job finished at: $(date)"
