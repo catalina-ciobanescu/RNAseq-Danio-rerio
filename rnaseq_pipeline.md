@@ -60,13 +60,15 @@ This is important not only for version control but also because it stores your s
 
 - Use the program FastQC to get quality reports for all of your samples (This should be a script)
 - Use the program MultiQC to copile the per-sample reports into a single report. (This doesn't need to be a script. You can run the command directly on the terminal. However, DON'T do it on the login node. Get to a computing node first with the command "Sinteractive").
+ - **Computing resources used**: 1 cpu, 8G memory, 1h
 
 ### 2.2 Use Trimmomatic to filter low-quality reads (This should be a script)
+
 - Filtering on a per-sample basis. Use SLURMs array job functionality to submit all samples in parallel. 
 - Run trimmomatic with the PE (pair-end) label, since our data is paired-end. You need to provide the two pair end files for each sample.
 - You need to provide some filtering settings on the trimmomatic command. Read about them and try to find out what the default values are.
 - Run again MultiQC to see the changes to your reads quality before and after filtering!
-
+- **Computing resources used**: 4 cpu, 3G memory, 15min (optimized with *seff* info)
 
 
 ## 3 - Map good quality reads to genome 
@@ -77,11 +79,14 @@ This is important not only for version control but also because it stores your s
     - I highly recommend that you read at least the first part of the STAR manual to understand a bit better how it works. You can find it here: https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf
     - There is also a nice tutorial to STAR here: https://hbctraining.github.io/Intro-to-rnaseq-hpc-O2/lessons/03_alignment.html
 
+
+
 ### 3.1 STAR genome indexing and preparation (this should be its own script)
  - Before doing the actual alignment, we need to generate a genome index. This is a folder where STAR writes several files with summary information on our genome that it requires to align more efficiently the reads on the mapping step. 
 
  - This step can be **very** memory intensive. If your job is failing due to segmentation issues, try increasing the memory that you are allocating to the job when you submit it to Curnagl. 
-    - In my script, I ask for 30 GB of memory
+- **Computing resources used**: 6 cpu, 30G memory, 30min (optimized with *seff* info)
+
 
 ### 3.2 Read mapping with STAR - 2 step mode (this should be another script)
 - This is the step where you map your reads to the genome. You can find the necessary commands in the tutorial and manual that I shared above.
@@ -94,6 +99,10 @@ This is important not only for version control but also because it stores your s
 
 - Be careful to save the files of the 2nd mapping step on a different folder of the files of the 1st mapping step to avoid overwriting them. The default file names that STAR generates are the same regardless of whether your are running the first or second step of alignment. 
 
+- **Computing resources used**: 8 cpu, 25G memory, 1h (optimized with *seff* info)
+
+
+
 ### 3.3 Mapping QC
 
 - Now you can do the quality control of your bam files using MultiQC again! Some of the multiple files that STAR generates after mapping are quality reports. MultiQC can look for these files and compile a QC report for STAR. All you need to do is run MultiQC on the mother folder containing all the STAR folders for all your samples.
@@ -101,14 +110,39 @@ This is important not only for version control but also because it stores your s
 - However, you need to do this separately for the results of the first and second mapping steps, since the files will have the same name.  
 
 
-
 ## 4 - Read counting
+
+- In this step we are going to take the alignments we did for all our samples in the previous step and count how many reads are aligned to each gene in the genome. Our output will be a huge table with genes on the rows and our samples in the columns and read counts on the cells of the table. Plus some metadata.
+- For this we are going to use the program **featureCounts**. This is part of a package called **subread** so you will need to install **subread** in your conda environment.
+- The manual for featureCounts can be found on chapter 6 of the subread manual: https://bioconductor.org/packages/release/bioc/vignettes/Rsubread/inst/doc/SubreadUsersGuide.pdf 
+
+
 
 ### 4.1 - Conversion of genome annotation gtf file to saf (important for exon usage analysis)
 
+- This is an important step for the counting of reads mapping to exons - which is the information that we use for our splicing analysis.
+- Annotation files usually will have information at the gene level and at the transcript-level.
+- Often for a single-gene you will have multiple mRNAs transcript entries
+- However featureCounts doesn't know how to properly deal with this, so it will assume that every exon in the multiple transcripts of a gene is a different exon, which often is not the case.
+- This leads to the same exon being replicated multiple times in the output of featureCounts
+- To avoid this issue we can "flatten" our annotation file into a .saf format.
+- This saf format gets rid of all transcript-level information and only saves the information on the genes and their exons location, making the read counting process much simpler. 
+- **subread** includes a program specific for this called **flattenGTF**
+- When running **flattenGTF** you may run into an error due to a slight formatting issue with the gtf created by agat. For me the issue was on the **Dbxref** field of the 9th column of the gtf file. This field had two values instead of one. You just need to do a bit of shell scripting to merge this two values with an "_"
+    - eg. Dbxref "GeneID:120821053" "Genbank:XM_040179415.1"; needs to become Dbxref "GeneID:120821053_Genbank:XM_040179415.1"
+
+
+
 ### 4.2 - Gene and exon-level read counting using featureCounts
 
+- Once you have your SAF file, running featureCounts is actually super straightforward. Just check the command on the documentation for featureCounts.
+- The most important setting you should pay attention to is the "-f" setting, which will determine whether featureCounts will count reads at the gene or exon-level
+
+
 ### 4.3 - Read counting QC
+
+- Then use again multiqc to get a report on the results of featureCounts! 
+    - Be careful to do this separately for the exon and gene-level data, since they will have the same name files and this will confuse multiqc
 
 
 ## 5 - Read counts pre-processing
